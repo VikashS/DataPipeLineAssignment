@@ -11,8 +11,6 @@ import org.apache.spark.streaming.{Seconds, StreamingContext, Time}
 
 object SparkStreamingFromKafka extends App{
   Logger.getLogger("org").setLevel(Level.ERROR)
-
-  Logger.getLogger("org").setLevel(Level.ERROR)
   val sparkConf = new SparkConf().setAppName("KafkaDirectStreaming").setMaster("local[*]")
     .set("spark.cassandra.connection.host", "127.0.0.1")
     .set("spark.cassandra.auth.username", "cassandra")
@@ -21,9 +19,6 @@ object SparkStreamingFromKafka extends App{
   val kafkaTopicRaw = "mytopics"
   val kafkaBroker = "127.0.0.1:9092"
   val topicsSet = Set("mytopics")
-
-
-
 
   val topics: Set[String] = kafkaTopicRaw.split(",").map(_.trim).toSet
   val kafkaParams = Map[String, String]("metadata.broker.list" -> kafkaBroker)
