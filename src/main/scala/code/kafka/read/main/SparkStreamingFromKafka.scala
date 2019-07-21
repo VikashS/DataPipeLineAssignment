@@ -21,7 +21,7 @@ object SparkStreamingFromKafka extends App{
   val kafkaParams = Map[String, String]("metadata.broker.list" -> kafkaBroker)
   val messages: InputDStream[(String, String)] = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topicsSet)
   val tweets: DStream[String] = messages.map { case (key, message) => message }
-  ViewHandler.createAllView(ssc.sparkContext, tweets)
+  AggregationAndInsert.createTwitterView(ssc.sparkContext, tweets)
 
   ssc.start()
   ssc.awaitTermination()
