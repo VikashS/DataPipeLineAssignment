@@ -18,10 +18,10 @@ object AggregationAndInsert {
       val tweets: DataFrame = spark.sqlContext.read.json(rdd)
       tweets.createOrReplaceTempView("mytable")
       val wordCountsDataFrame: DataFrame = spark.sql("SELECT id,created_at,favorite_count from mytable Where retweet_count >= 0 ")
-      val res: DataFrame = wordCountsDataFrame.withColumnRenamed("id","userid").withColumnRenamed("created_at","createdat").withColumnRenamed("favorite_count","friendscount")
-      res.write.mode(SaveMode.Overwrite)
+     // val res: DataFrame = wordCountsDataFrame.withColumnRenamed("id","userid").withColumnRenamed("created_at","createdat").withColumnRenamed("favorite_count","friendscount")
+      wordCountsDataFrame.write.mode(SaveMode.Overwrite)
         .format("org.apache.spark.sql.cassandra")
-        .options(Map( "table" -> "friendcountview", "keyspace" -> "vkspace"))
+        .options(Map( "table" -> "twitterdata", "keyspace" -> "vkspace"))
         .save()
       wordCountsDataFrame.show(false)
 
