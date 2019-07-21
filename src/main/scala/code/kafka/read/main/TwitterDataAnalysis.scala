@@ -1,6 +1,5 @@
 package code.kafka.read.main
 
-import .RawTwitterData
 import scala.concurrent.duration._
 import kafka.serializer.StringDecoder
 import org.apache.log4j.{Level, Logger}
