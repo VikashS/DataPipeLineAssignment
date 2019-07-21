@@ -1,6 +1,6 @@
 package code.kafka.read.main
 
-import code.kafka.read.main.TwitterSchema.RawTwitterData
+import .RawTwitterData
 import scala.concurrent.duration._
 import kafka.serializer.StringDecoder
 import org.apache.log4j.{Level, Logger}
@@ -26,9 +26,6 @@ object TwitterDataAnalysis {
     val kafkaParams = Map[String, String]("metadata.broker.list" -> kafkaBroker)
     val rawTwitterStream = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topics).map(_._2)
 
-    //val parsedWeatherStream: DStream[RawTwitterData] = ingestStream(rawTwitterStream)
-
-
     val hashTags = rawTwitterStream.flatMap(_.split(",")).filter(_.contains("@domAAdom"))
     val topTenPopularTwiite = hashTags.map((_, 1)).reduceByKeyAndWindow(_ + _, Seconds(10))
       .map { case (topic, count) => (count, topic) }
@@ -39,9 +36,6 @@ object TwitterDataAnalysis {
       println("\nPopular channel in last 10 seconds (%s total):".format(rdd.count()))
       topList.foreach { case (count, tag) => println("%s (%s tweets)".format(tag, count)) }
     })
-
-
-
     //ssc.checkpoint("addd the hdfs path from cloudera vm  hdfs://ip:8020/test")
     rawTwitterStream.print
     ssc.start()
