@@ -8,6 +8,7 @@ import org.apache.spark.streaming.dstream.{DStream, InputDStream}
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import com.datastax.spark.connector.cql.CassandraConnector
+import org.apache.spark.sql.{SQLContext, SaveMode}
 
 object TwitterDataAnalysis {
 
@@ -19,28 +20,33 @@ object TwitterDataAnalysis {
     val ssc = new StreamingContext(sparkConf, Seconds(10))
     val kafkaTopicRaw = "mytopics"
     val kafkaBroker = "127.0.01:9092"
+    val sqlContext = new SQLContext(ssc.sparkContext
+    )
+    import sqlContext.implicits._
 
 
     val topics: Set[String] = kafkaTopicRaw.split(",").map(_.trim).toSet
     val kafkaParams = Map[String, String]("metadata.broker.list" -> kafkaBroker)
     val rawTwitterStream = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topics).map(_._2)
 
-    val hashTags = rawTwitterStream.flatMap(_.split(",")).filter(_.contains("@domAAdom"))
-    val topTenPopularTwiite = hashTags.map((_, 1)).reduceByKeyAndWindow(_ + _, Seconds(10))
+    val hashTags: DStream[String] = rawTwitterStream.flatMap(_.split(",")).filter(_.contains("@domAAdom"))
+    val topTenPopularTwiite: DStream[(Int, String)] = hashTags.map((_, 1)).reduceByKeyAndWindow(_ + _, Seconds(10))
       .map { case (topic, count) => (count, topic) }
       .transform(_.sortByKey(false))
 
     val counyVal = topTenPopularTwiite.foreachRDD(rdd => {
       val topList = rdd.take(10)
-      println("\nPopular channel in last 10 seconds (%s total):".format(rdd.count()))
-      topList.foreach { case (count, tag) => println("%s (%s tweets)".format(tag, count)) }
+      val df= rdd.toDF("count","tags")
+        //df.show(20,false)
+        .write.mode(SaveMode.Append)
+        .format("org.apache.spark.sql.cassandra")
+        .options(Map( "table" -> "toptentag", "keyspace" -> "vkspace"))
+        .save()
     })
     //ssc.checkpoint("addd the hdfs path from cloudera vm  hdfs://ip:8020/test")
     rawTwitterStream.print
     ssc.start()
     ssc.awaitTermination()
     ssc.stop()
-
   }
-
 }
