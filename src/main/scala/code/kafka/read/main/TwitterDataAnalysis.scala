@@ -20,6 +20,8 @@ object TwitterDataAnalysis {
     val ssc = new StreamingContext(sparkConf, Seconds(10))
     val kafkaTopicRaw = "mytopics"
     val kafkaBroker = "127.0.01:9092"
+    val searchValue = args.mkString("")
+    val broadcastSearchValue = ssc.sparkContext.broadcast(searchValue)
     val sqlContext = new SQLContext(ssc.sparkContext
     )
     import sqlContext.implicits._
@@ -29,7 +31,7 @@ object TwitterDataAnalysis {
     val kafkaParams = Map[String, String]("metadata.broker.list" -> kafkaBroker)
     val rawTwitterStream = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topics).map(_._2)
 
-    val hashTags: DStream[String] = rawTwitterStream.flatMap(_.split(",")).filter(_.contains("@domAAdom"))
+    val hashTags: DStream[String] = rawTwitterStream.flatMap(_.split(",")).filter(_.contains(broadcastSearchValue.value))
     val topTenPopularTwiite: DStream[(Int, String)] = hashTags.map((_, 1)).reduceByKeyAndWindow(_ + _, Seconds(10))
       .map { case (topic, count) => (count, topic) }
       .transform(_.sortByKey(false))
